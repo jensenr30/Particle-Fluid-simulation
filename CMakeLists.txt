@@ -18,6 +18,7 @@ add_executable(particle_sim
     fluidsim/extern/imgui/imgui_tables.cpp
     fluidsim/extern/imgui/imgui_widgets.cpp
     fluidsim/extern/imgui/backends/imgui_impl_opengl3.cpp
+    fluidsim/extern/imgui/backends/imgui_impl_glfw.cpp
 
     fluidsim/extern/implot/implot.cpp
     fluidsim/extern/implot/implot_demo.cpp
