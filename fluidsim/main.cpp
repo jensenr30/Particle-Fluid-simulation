@@ -12,7 +12,6 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include <io.h>
 
 #define GL_SILENCE_DEPRECATION
 using namespace std;
