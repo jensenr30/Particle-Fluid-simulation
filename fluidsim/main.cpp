@@ -31,7 +31,7 @@ static uint32_t rrggbb_to_aabbggrr(uint32_t u24_tracing_color) {
         | (u24_tracing_color & 0xff) << 16;
 }
 
-// test
+// test bonjour
 
 GLFWwindow* window;
 
@@ -157,7 +157,6 @@ void CollisionHandler(float dt) {
         }
     }
 
-
     for (auto& a : particles) {
         // collisions with ground
         if (a.y < 2) {
@@ -179,23 +178,19 @@ void CollisionHandler(float dt) {
             a.vx *= -0.6;
         }
 
-        // collisions between particles
-        //for (auto& b : particles) {
-        //    auto distance = sqrt(((a.x - b.x) * (a.x - b.x)) + ((a.y - b.y) * (a.y - b.y)));
-        //}
     }
 }
 
 void particleCreation() {
-    for (int i = 0; i < 1; i++) {
-        particles.push_back(Particle{ startingX, startingY - 10, startingVX, -100, 1, 0, 0});
+    for (int i = 0; i < 0; i++) {
+        particles.push_back(Particle{ startingX, startingY - 10, startingVX, -100, 1.0, 0.0, 0.0});
         //startingX += 5;
         //startingVX++;
         //startingVY++;
     }
     startingX = 5;
     startingY -= 10;
-    for (int n = 0; n < 2500; n++) {
+    for (int n = 0; n < 5000; n++) {
         particles.push_back(Particle{ startingX, startingY, startingVX, startingVY, startingColorR, startingColorG, startingColorB});
         //startingX += 5;
         startingX += 5;
@@ -204,6 +199,7 @@ void particleCreation() {
     }
 }
 
+/* TODO: fix colors */
 void changeColor() {
     for (auto& p : particles) {
         if (p.vx > 100.0 || p.vy > 100.0) {
@@ -278,8 +274,6 @@ void ImguiWindow(ImGuiIO& io = ImGui::GetIO()) {
     if (ImGui::Button("reset")) { resetSimButton = true; };
     ImGui::Checkbox("imgui demo window", &show_demo_window);
     ImGui::Checkbox("implot demo window", &show_implot_demo_window);
-    ImGui::SameLine();
-    ImGui::Text("counter = %d", counter);
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
     ImGui::End();
