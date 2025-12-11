@@ -260,14 +260,9 @@ void ImguiWindow() {
     }
 
 
-<<<<<<< HEAD
     if (ImGui::Button("reset")) {
         resetSimButton = true;
     }
-=======
-    ImGui::Button(
-        "resetSimButton"); // Buttons return true when clicked (most widgets return true when edited/activated)
->>>>>>> 9a5f157 (make the window appear on macos)
     ImGui::SameLine();
     ImGui::Text("counter = %d", counter);
 
