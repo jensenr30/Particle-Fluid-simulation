@@ -3,13 +3,14 @@
 A simple particle simulator which implements a Neighbor Searching algorithm
 using a Grid system
 
+![demo](assets/output.gif)
+
 ## Build
 - To build just clone the repo and run:
 
 ```sh
 ./build.sh
 ```
-![demo](assets/output.gif)
 
 ## TODO:
 - [x] Implement Neighbor Searching with a grid system
