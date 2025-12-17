@@ -17,7 +17,7 @@ using a Grid system
 ```
 
 ## TODO:
-- [x] Implement Neighbor Searching with a grid system
+- [x] ~~Implement Neighbor Searching with a grid system~~
 - [ ] Changing colors depending on particle speed
 - [ ] Fix the dampening factor
 - [ ] Make the menu look better
