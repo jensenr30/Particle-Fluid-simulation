@@ -400,7 +400,7 @@ void ImguiWindow(ImGuiIO &io = ImGui::GetIO()) {
   // Edit bools storing our window open/close state
   // ImGui::Checkbox("Another Window", &show_another_window);
   ImGui::Spacing();
-  ImGui::SliderInt("Ammount of particles", &particle_ammount, 0, 5000);
+  ImGui::SliderInt("Ammount of particles", &particle_ammount, 0, 10000);
   ImGui::Spacing();
   ImGui::SliderFloat("Gravity", &gravity, 0.0f, 5000.0f);
   ImGui::Spacing();
@@ -408,9 +408,9 @@ void ImguiWindow(ImGuiIO &io = ImGui::GetIO()) {
   ImGui::Spacing();
   ImGui::SliderFloat("Dampening Factor", &dampeningFactor, 0.0, 1.0f);
   ImGui::Spacing();
-  ImGui::SliderFloat("Starting Velocity X", &startingVX, -1000.0, 1000.0f);
+  ImGui::SliderFloat("Starting Velocity X", &startingVX, -5000.0, 5000.0f);
   ImGui::Spacing();
-  ImGui::SliderFloat("Starting Velocity Y", &startingVY, -1000.0, 1000.0f);
+  ImGui::SliderFloat("Starting Velocity Y", &startingVY, -5000.0, 5000.0f);
   ImGui::Spacing();
   ImGui::Spacing();
   ImGui::ColorEdit3("clear color", col1); // Edit 3 floats representing a color
@@ -456,7 +456,6 @@ void ImguiWindow(ImGuiIO &io = ImGui::GetIO()) {
   ImGui::Checkbox("implot demo window", &show_implot_demo_window);
   ImGui::Spacing();
   ImGui::Spacing();
-  ImGui::Text("Grid Size: %d", sizeof(grid));
   ImGui::Spacing();
   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
               1000.0f / io.Framerate, io.Framerate);

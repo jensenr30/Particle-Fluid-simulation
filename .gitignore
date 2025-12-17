@@ -3,6 +3,9 @@ x64
 fluidsim/fluidsim.vcxproj.user
 imgui.ini
 build
+fluidsim/fluidsim.vcxproj
+fluidsim/fluidsim.vcxproj.filters
+fluidsim.sln
 
 .cache
 .DS_Store
