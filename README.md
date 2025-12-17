@@ -7,7 +7,7 @@ using a Grid system and Spatial Hashing
 
 ## Demo
 
-![demo](fluidsim/assets/output.gif)
+![demo](assets/output.gif)
 
 ## Build
 - To build just clone the repo and run:
