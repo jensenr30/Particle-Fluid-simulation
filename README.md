@@ -7,7 +7,7 @@ using a Grid system and Spatial Hashing
 
 ## Demo
 
-![demo](assets/output.gif)
+![demo](assets/demo.gif)
 
 ## Build
 - To build just clone the repo and run:
