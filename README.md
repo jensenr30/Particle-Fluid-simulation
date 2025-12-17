@@ -9,7 +9,7 @@ using a Grid system
 ```sh
 ./build.sh
 ```
-
+![demo](assets/output.gif)
 
 ## TODO:
 - [x] Implement Neighbor Searching with a grid system
