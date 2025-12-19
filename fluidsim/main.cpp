@@ -32,6 +32,8 @@ static uint32_t rrggbb_to_aabbggrr(uint32_t u24_tracing_color) {
          (u24_tracing_color & 0xff00) | (u24_tracing_color & 0xff) << 16;
 }
 
+constexpr float test = -100.0f;
+
 inline ImVec2 worldToNDC(float x, float y) { return ImVec2(x, HEIGHT - y); }
 
 GLFWwindow *window;
@@ -639,14 +641,16 @@ void DrawForces() {
       float fx = nx * force * forceDrawScale;
       float fy = ny * force * forceDrawScale;
 
-      ImVec2 p0 = worldToNDC(a.x, a.y);
-      ImVec2 p1 = worldToNDC(a.x + fx, a.y + fy);
+      ImVec2 start = worldToNDC(a.x, a.y);
+      // ImVec2 start = worldToNDC(a.x, a.y);
+      // ImVec2 end = ImVec2(a.x + fx, a.y + fy);
+      ImVec2 end = ImVec2(a.x + fx, a.y + fy);
 
-      ImVec2 s0((p0.x + 1.0f) * 0.5f * WIDTH, (1.0f - p0.y) * 0.5f * HEIGHT);
-      ImVec2 s1((p1.x + 1.0f) * 0.5f * WIDTH, (1.0f - p1.y) * 0.5f * HEIGHT);
+      ImVec2 s0((start.x + 1.0f) * 0.5f * WIDTH,
+                (1.0f - start.y) * 0.5f * HEIGHT);
+      ImVec2 s1((end.x + 1.0f) * 0.5f * WIDTH, (1.0f - end.y) * 0.5f * HEIGHT);
 
-      dl->AddLine(ImVec2(100, 100), ImVec2(200, 100),
-                  IM_COL32(255, 100, 100, 100), 1.0f);
+      dl->AddLine(start, end, IM_COL32(255, 100, 100, 100), 1.0f);
     }
   }
 }
