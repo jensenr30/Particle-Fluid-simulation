@@ -21,12 +21,13 @@ using namespace std;
 #define WIDTH 1920
 #define HEIGHT 1080
 
+using u32 = uint32_t;
+
 GLFWwindow *window;
 
 void reset();
 
 float lastTime = glfwGetTime();
-float dt;
 float currentTime;
 
 float gravity = 0.0;
@@ -79,8 +80,10 @@ GLuint particleShaderProgram;
 
 class Particle {
 public:
+  // position in world space (currently pixel space)
   float x, y;   // 8bytes
   float vx, vy; // 8bytes
+  // x and y position in openGL normalized screen space [-1, 1]
   float nx, ny; // 8bytes
                 // 32bytes
 };
@@ -206,7 +209,7 @@ void updateParticle(float dt) {
   ParticlemX = GLFWmX;
   ParticlemY = HEIGHT - GLFWmY;
 
-  for (int i = 0; i < particles.size(); i++) {
+  for (u32 i = 0; i < particles.size(); i++) {
     auto &p = particles[i];
     p.vy -= gravity * dt;
     p.y += p.vy * dt;
@@ -247,7 +250,7 @@ void clearGrid() {
 }
 
 void SpatialGrid() {
-  for (int i = 0; i < particles.size(); i++) {
+  for (u32 i = 0; i < particles.size(); i++) {
     auto &p = particles[i];
     int cellX = std::floor(p.x / cellSize);
     int cellY = std::floor(p.y / cellSize);
@@ -270,7 +273,7 @@ void SpatialGrid() {
 }
 
 void CollisionHandler(float dt) {
-  for (int i = 0; i < particles.size(); i++) {
+  for (u32 i = 0; i < particles.size(); i++) {
     auto &a = particles[i];
     int cellX = std::floor(a.x / cellSize);
     int cellY = std::floor(a.y / cellSize);
@@ -341,7 +344,7 @@ void particleCreation() {
   for (int n = 0; n < particle_ammount; n++) {
     particleColors.push_back(
         ParticleColor{startingColorR, startingColorG, startingColorB, 1.0});
-    particles.push_back(Particle{startingX, startingY, VX, VY});
+    particles.push_back(Particle{startingX,startingY, VX,VY, 0,0});
     // startingX += 5;
     startingX++;
     VX++;
@@ -352,7 +355,7 @@ void particleCreation() {
 /* TODO: fix colors */
 
 void changeColor() {
-  for (int i = 0; i < particles.size(); i++) {
+  for (u32 i = 0; i < particles.size(); i++) {
     auto &p = particles[i];
     auto &pc = particleColors[i];
 
@@ -391,7 +394,6 @@ void ImguiWindow(ImGuiIO &io = ImGui::GetIO()) {
   ImGui::Begin("##particlesim", NULL,
                ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar |
                    ImGuiWindowFlags_NoResize); // Create a window called
-  ImGuiStyle &style = ImGui::GetStyle();
 
   SetupImGuiStyle();
   ImGui::PushFont(TitleFont);
@@ -447,7 +449,6 @@ void mousecallback(GLFWwindow* window, int button, int action, int mods) {
 
 void reset() {
   lastTime = glfwGetTime();
-  dt = 0;
   currentTime = 0;
   startingX = 5.0;
   startingY = 710.0;
@@ -572,9 +573,6 @@ int main() {
   // only glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // 3.0+ only
 #endif
 
-  float main_scale =
-      1.0; // ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
-
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
@@ -614,7 +612,7 @@ int main() {
   while (!glfwWindowShouldClose(window)) {
 
     currentTime = glfwGetTime();
-    dt = currentTime - lastTime;
+    float dt = currentTime - lastTime;
     lastTime = currentTime;
 
     // physics update
