@@ -628,7 +628,6 @@ int main() {
   mainFont = io.Fonts->AddFontFromFileTTF("../assets/Pixel_Letters.ttf", 15.0f);
   TitleFont = io.Fonts->AddFontFromFileTTF("../assets/Pixel_Letters.ttf", 25.0f);
   SubtitleFont = io.Fonts->AddFontFromFileTTF("../assets/Pixel_Letters.ttf", 20.0f);
-  IM_ASSERT(mainFont != NULL);
   // clang-format on
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
