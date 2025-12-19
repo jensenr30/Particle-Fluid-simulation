@@ -13,24 +13,13 @@
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include <cstdio>
-#include <deque>
 #include <iostream>
 #include <vector>
 
-#define GL_SILENCE_DEPRECATION
 using namespace std;
 
 #define WIDTH 1920
 #define HEIGHT 1080
-
-/* TODO: Clean this shit up*/
-#define TRACING_COLOR_MAP_UPDATE 0x0000ff
-#define TRACING_COLOR_RENDER 0x227733
-#define NUM_ELEM(array) (sizeof(array) / sizeof((array)[0]))
-static uint32_t rrggbb_to_aabbggrr(uint32_t u24_tracing_color) {
-  return 0xff << 24 | (u24_tracing_color & 0xff0000) >> 16 |
-         (u24_tracing_color & 0xff00) | (u24_tracing_color & 0xff) << 16;
-}
 
 GLFWwindow *window;
 
@@ -431,34 +420,6 @@ void ImguiWindow(ImGuiIO &io = ImGui::GetIO()) {
   ImGui::PopFont();
   ImGui::PushFont(mainFont);
   ImGui::ColorEdit3("Particle Color", col1); // Edit 3 floats representing a
-  /*
-  if (ImGui::Begin("fps")) {
-      auto size = ImVec2(ImGui::GetWindowSize().x - 20, 200 * 1.0);
-      if (ImPlot::BeginPlot("Timing", size, ImPlotFlags_NoInputs)) {
-          static const ImU32 color_map_data[] = {
-              rrggbb_to_aabbggrr(TRACING_COLOR_MAP_UPDATE),
-              rrggbb_to_aabbggrr(TRACING_COLOR_RENDER),
-          };
-          static ImPlotColormap timing_color_map = -1;
-          if (timing_color_map == -1) {
-              timing_color_map =
-  ImPlot::AddColormap("CycleTimesUpdateTimeColorMap", color_map_data,
-  NUM_ELEM(color_map_data));
-          }
-
-          ImPlot::PushColormap(timing_color_map);
-
-          //ImPlot::SetupAxes("sample", "time (ms)");
-          //ImPlot::PlotLine("map_update", map_update_x, map_update_y,
-  total_samples, 0, 0);
-          //ImPlot::PlotLine("framerate", fpsBuf., fpsBuf.size());
-
-          ImPlot::PopColormap();
-
-          ImPlot::EndPlot();
-      }
-      ImGui::End();
-  } */
 
   if (ImGui::Button("reset")) {
     resetSimButton = true;
