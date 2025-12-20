@@ -437,6 +437,7 @@ void particleCreation() {
     particles.push_back(Particle{startingX, startingY, VX, VY, ParticleMass});
     // startingX += 5;
     startingX++;
+    startingY++;
   }
 }
 
