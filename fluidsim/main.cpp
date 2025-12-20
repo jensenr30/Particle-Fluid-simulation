@@ -23,16 +23,33 @@ using namespace std;
 
 using u32 = uint32_t;
 
+constexpr float test = 100.0f;
+
+inline ImVec2 worldToNDC(float x, float y) {
+  return ImVec2((x / WIDTH) * 2.0f - 1.0f, (y / HEIGHT) * 2.0f - 1.0f);
+}
+
+inline ImVec2 NDCToScreen(ImVec2 ndc) {
+  return ImVec2((ndc.x + 1.0f) * 0.5f * WIDTH, (1.0f - ndc.y) * 0.5f * HEIGHT);
+}
+
 GLFWwindow *window;
 
 void reset();
 
 float lastTime = glfwGetTime();
 float currentTime;
+float timeScale = 1.0f;
+bool paused = false;
 
 float gravity = 0.0;
+constexpr float GravitationalConstant = 0.00000000000000001f;
 float separationForce = 2000.0;
 constexpr float radius = 2.0f;
+constexpr float ParticleMass = 1e5;
+// constexpr float ParticleMass = 0.000000000001f;
+// constexpr float ParticleMass2 = 90e95;
+constexpr float ParticleMass2 = 1e5;
 
 float startingX = 5.0, startingY = 710.0;
 float startingVX = 0.0, startingVY = 0.0;
@@ -42,6 +59,9 @@ float startingColorG = 0.62;
 float startingColorB = 0.62;
 
 float AirResistance;
+
+bool drawForces = false;
+float forceDrawScale = 0.001f;
 
 // GLFWmousebuttonfun old_callback = nullptr;
 // GLFWmousebuttonfun new_callback = nullptr;
@@ -65,6 +85,8 @@ bool resetSimButton;
 bool show_demo_window = false;
 bool show_implot_demo_window = false;
 
+float particleSize = 3.0f;
+
 int particle_ammount;
 
 static float col1[3] = {1.0f, 0.0f, 0.2f};
@@ -72,6 +94,8 @@ static float col1[3] = {1.0f, 0.0f, 0.2f};
 constexpr float cellSize = radius * radius;
 constexpr int cellsX = (WIDTH / cellSize);
 constexpr int cellsY = (HEIGHT / cellSize);
+
+bool SpatialGravityEnabled = false;
 
 // OpenGL variables
 GLuint particleVAO;
@@ -83,9 +107,10 @@ public:
   // position in world space (currently pixel space)
   float x, y;   // 8bytes
   float vx, vy; // 8bytes
+  float mass;
   // x and y position in openGL normalized screen space [-1, 1]
   float nx, ny; // 8bytes
-                // 32bytes
+  // 32bytes
 };
 class ParticleColor {
 public:
@@ -97,6 +122,9 @@ std::vector<Particle> particles;
 std::vector<ParticleColor> particleColors;
 std::vector<int> grid[cellsX][cellsY];
 
+void applyGravity(Particle &a, Particle &b, float GravitationalConstant,
+                  float dt);
+
 static void glfw_error_callback(int error, const char *description) {
   fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
@@ -105,9 +133,10 @@ void setupDrawing() {
   const char *vertexShaderSource = R"(
         #version 330 core
         layout (location = 0) in vec2 aPos;
+        uniform float particleSize;
         void main() {
             gl_Position = vec4(aPos, 0.0, 1.0);
-            gl_PointSize = 3.0;
+            gl_PointSize = particleSize;
         }
     )";
 
@@ -140,8 +169,7 @@ void setupDrawing() {
   glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
   if (!success) {
     glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-    std::cout << "I'm sowwy mister there was an ewwow :3\n"
-              << infoLog << std::endl;
+    std::cout << "EROR!! PANIK!!\n" << infoLog << std::endl;
   }
 
   particleShaderProgram = glCreateProgram();
@@ -181,6 +209,9 @@ void drawParticle() {
 
   glUseProgram(particleShaderProgram);
 
+  int sizeLoc = glGetUniformLocation(particleShaderProgram, "particleSize");
+  glUniform1f(sizeLoc, particleSize);
+
   GLint colorLoc = glGetUniformLocation(particleShaderProgram, "particleColor");
   glUniform3f(colorLoc, col1[0], col1[1], col1[2]);
 
@@ -202,7 +233,15 @@ void drawParticle() {
   glBindVertexArray(0);
 }
 
-void updateParticle(float dt) {
+void updateParticle(float GravitationalConstant, float dt) {
+
+  if (SpatialGravityEnabled == true) {
+    for (int d = 0; d < particles.size(); d++) {
+      for (int k = 0; k < particles.size(); k++) {
+        applyGravity(particles[d], particles[k], GravitationalConstant, dt);
+      }
+    }
+  }
 
   glfwGetCursorPos(window, &GLFWmX, &GLFWmY);
 
@@ -239,6 +278,35 @@ void updateParticle(float dt) {
   if (resetSimButton) {
     reset();
   }
+}
+
+void applyGravity(Particle &a, Particle &b, float GravitationalConstant,
+                  float dt) {
+  // std::cout << "UHAEOUIHSF" << std::endl;
+  float dx = a.x - b.x;
+  float dy = a.y - b.y;
+
+  float distSq = dx * dx + dy * dy + 0.01f; // 0.01f for a little softening
+  float dist = std::sqrt(distSq);
+
+  // normalize direction
+  float nx = dx / dist;
+  float ny = dy / dist;
+
+  float force = GravitationalConstant * a.mass * b.mass / distSq;
+
+  // accelertion
+  float ax = force / a.mass;
+  float ay = force / a.mass;
+
+  float bx = force / b.mass;
+  float by = force / b.mass;
+
+  a.vx += nx * ax * dt;
+  a.vy += ny * ay * dt;
+
+  b.vx += nx * bx * dt;
+  b.vy += ny * by * dt;
 }
 
 void clearGrid() {
@@ -338,17 +406,30 @@ void CollisionHandler(float dt) {
     }
   }
 }
-
+void SpatialGRAVparticleCreation() {
+  for (int n = 0; n < 1; n++) {
+    particleColors.push_back(
+        ParticleColor{startingColorR, startingColorG, startingColorB, 1.0});
+    particles.push_back(
+        Particle{startingX + 100, startingY - 100, 0.05, 0.005, ParticleMass});
+    // startingX += 5;
+  }
+  for (int u = 0; u < 1; u++) {
+    particleColors.push_back(
+        ParticleColor{startingColorR, startingColorG, startingColorB, 1.0});
+    particles.push_back(
+        Particle{startingX + 1100, startingY - 100, -0.05, -0.005, ParticleMass2});
+    // startingX += 5;
+  }
+}
 void particleCreation() {
-  // TODO: look into .emplace_back
   for (int n = 0; n < particle_ammount; n++) {
     particleColors.push_back(
         ParticleColor{startingColorR, startingColorG, startingColorB, 1.0});
-    particles.push_back(Particle{startingX,startingY, VX,VY, 0,0});
+    particles.push_back(Particle{startingX,startingY, VX,VY, ParticleMass, 0, 0});
     // startingX += 5;
     startingX++;
-    VX++;
-    VY++;
+    startingY++;
   }
 }
 
@@ -390,7 +471,7 @@ void ImguiWindow(ImGuiIO &io = ImGui::GetIO()) {
   }
 
   ImGui::SetNextWindowSize(ImVec2(420, 550), ImGuiCond_Always);
-  ImGui::SetNextWindowPos(ImVec2(1490, 520), ImGuiCond_Always);
+  // ImGui::SetNextWindowPos(ImVec2(1490, 520), ImGuiCond_Always);
   ImGui::Begin("##particlesim", NULL,
                ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar |
                    ImGuiWindowFlags_NoResize); // Create a window called
@@ -407,13 +488,15 @@ void ImguiWindow(ImGuiIO &io = ImGui::GetIO()) {
                    ImGuiSliderFlags_Logarithmic);
   // ImGui::SliderInt("Ammount of particles", &particle_ammount, 0, 10000);
   ImGui::SliderFloat("Gravity", &gravity, 0.0f, 5000.0f);
+  ImGui::SliderFloat("Simulation Speed", &timeScale, 0.25, 1000.0f);
+  ImGui::SliderFloat("Particle Size", &particleSize, 0.0f, 10.0f);
   ImGui::SliderFloat("Separation Force", &separationForce, 0.0, 5000.0f);
   ImGui::PopFont();
   ImGui::PushFont(SubtitleFont);
   ImGui::SeparatorText("Forces");
   ImGui::PopFont();
   ImGui::PushFont(mainFont);
-  ImGui::SliderFloat("Air Resistance", &AirResistance, 0.0, 1.0f);
+  ImGui::SliderFloat("Air Resistance", &AirResistance, 1.0, 5.0f);
   ImGui::SliderFloat("Starting Velocity X", &startingVX, -5000.0, 5000.0f);
   ImGui::SliderFloat("Starting Velocity Y", &startingVY, -5000.0, 5000.0f);
   ImGui::PopFont();
@@ -422,10 +505,23 @@ void ImguiWindow(ImGuiIO &io = ImGui::GetIO()) {
   ImGui::PopFont();
   ImGui::PushFont(mainFont);
   ImGui::ColorEdit3("Particle Color", col1); // Edit 3 floats representing a
+  ImGui::PopFont();
+  ImGui::PushFont(SubtitleFont);
+  ImGui::SeparatorText("Debug");
+  ImGui::PopFont();
+  ImGui::PushFont(mainFont);
+  ImGui::Checkbox("Draw Force Vectors", &drawForces);
+  ImGui::SliderFloat("Force Vector Scale", &forceDrawScale, 0.0001f, 1.0f,
+                     "%.5f");
 
   if (ImGui::Button("reset")) {
     resetSimButton = true;
   };
+
+  ImGui::Checkbox("Spatial Gravity", &SpatialGravityEnabled);
+  ImGui::SameLine();
+  ImGui::Checkbox("Pause", &paused);
+  ImGui::SameLine();
   ImGui::Checkbox("imgui demo window", &show_demo_window);
   ImGui::SameLine();
   ImGui::Checkbox("implot demo window", &show_implot_demo_window);
@@ -447,7 +543,33 @@ void mousecallback(GLFWwindow* window, int button, int action, int mods) {
 
 }*/
 
+void SpatialGravRESET() {
+  lastTime = glfwGetTime();
+  dt = 0;
+  currentTime = 0;
+  startingX = 5.0;
+  startingY = 710.0;
+  VX = startingVX;
+  VY = startingVY;
+  startingColorR = 0.31;
+  startingColorG = 0.62;
+  startingColorB = 0.62;
+
+  while (!particles.empty()) {
+    particles.pop_back();
+    particleColors.pop_back();
+  }
+
+  SpatialGRAVparticleCreation();
+  resetSimButton = false;
+}
+
 void reset() {
+  if (SpatialGravityEnabled == true) {
+    SpatialGravRESET();
+    return;
+  }
+
   lastTime = glfwGetTime();
   currentTime = 0;
   startingX = 5.0;
@@ -466,6 +588,49 @@ void reset() {
   particleCreation();
   resetSimButton = false;
 }
+
+void DrawForces(const std::vector<Particle> &particles) {
+  ImDrawList *dl = ImGui::GetBackgroundDrawList();
+
+  for (int i = 0; i < particles.size(); i++) {
+    const Particle &a = particles[i];
+
+    for (int j = i + 1; j < particles.size(); j++) {
+      const Particle &b = particles[j];
+
+      float dx = b.x - a.x;
+      float dy = b.y - a.y;
+
+      float distSq = dx * dx + dy * dy + 0.0001f;
+      float dist = std::sqrtf(distSq);
+
+      float nx = dx / dist;
+      float ny = dy / dist;
+
+      float force = (a.mass * b.mass) / distSq;
+
+      float fx = nx * force * forceDrawScale;
+      float fy = ny * force * forceDrawScale;
+
+      ImVec2 start = NDCToScreen(worldToNDC(a.x, a.y));
+      ImVec2 end = NDCToScreen(worldToNDC(a.x + fx, a.y + fy));
+
+      dl->AddLine(start, end, IM_COL32(255, 100, 100, 100), 1.0f);
+    }
+  }
+}
+
+void DrawAxes() {
+  ImDrawList *dl = ImGui::GetBackgroundDrawList();
+
+  ImVec2 origin = NDCToScreen(worldToNDC(0, 0));
+  ImVec2 xAxis = NDCToScreen(worldToNDC(200, 0));
+  ImVec2 yAxis = NDCToScreen(worldToNDC(0, 200));
+
+  dl->AddLine(origin, xAxis, IM_COL32(255, 0, 0, 255), 2.0f); // X
+  dl->AddLine(origin, yAxis, IM_COL32(0, 255, 0, 255), 2.0f); // Y
+}
+
 /*
 void combinedMouseCallback(GLFWwindow* window, int button, int action, int mods)
 { if (old_callback) { mousecallback(window, button, action, mods);
@@ -614,9 +779,24 @@ int main() {
     currentTime = glfwGetTime();
     float dt = currentTime - lastTime;
     lastTime = currentTime;
+    if (paused == true) {
+      dt = 0.0f;
+    } else {
+      dt *= timeScale;
+    }
+    //
+    // if (SpatialGravityEnabled) {
+    //   for (int i = 0; i < particles.size(); i++) {
+    //     auto &a = particles[i];
+    //     for (int j = 0; j < particles.size(); j++) {
+    //       auto &b = particles[j];
+    //       applyGravity(a, b, G, dt);
+    //     }
+    //   }
+    // }
 
     // physics update
-    updateParticle(dt);
+    updateParticle(GravitationalConstant, dt);
     clearGrid();
     SpatialGrid();
     CollisionHandler(dt);
@@ -626,9 +806,12 @@ int main() {
 
     // draw
     drawParticle();
-
     // imgui window
     ImguiWindow();
+    if (drawForces == true) {
+      DrawForces(particles);
+    }
+    DrawAxes();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
